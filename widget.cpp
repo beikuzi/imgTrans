@@ -9,7 +9,7 @@ Widget::Widget(QWidget *parent)
 	setFunc();
 	setStyle();
 
-	//使用bfs为所有控件绑定事件过滤器
+    //使用bfs为所有控件绑定事件过滤器和样式
 	QQueue<QWidget *> widgetQueue;
 	widgetQueue.enqueue(this);
 	while (!widgetQueue.isEmpty()) {
@@ -44,6 +44,16 @@ Widget::Widget(QWidget *parent)
 			widgetQueue.enqueue(childWidget);
 		}
 	}
+
+    //    ui->btnImg2Base->setStyleSheet(
+    //        "QPushButton {"
+    //        "    background-color: rgba(0,255,255,100); /* 设置背景颜色 */"
+    //        "    border: 1px solid #000080; /* 设置边框 */"
+    //        "    border-radius: 10px; /* 设置圆角半径 */"
+    //        "}"
+    //        "QPushButton:hover {"
+    //        "    background-color: rgba(0,255,255,200); /* 鼠标悬停时的背景颜色 */"
+    //        "}");
 }
 
 void Widget::setStyle() {
@@ -102,12 +112,6 @@ void Widget::outPutImg() {
 	//							   "暗通道先验去雾(手写)", "颜色通道重排列(手写)", "二值化(手写)", "二值化(反色,手写)",
 	//							   "边缘检测:canny", "边缘检测:sobel", "边缘检测:laplacian",
 	//							   "水平翻转", "竖直翻转", "中心镜像翻转"};
-	if (ui->imgRoad->toPlainText().isEmpty()) return;
-	Mat src = bkz::cvFun::imread(ui->imgRoad->toPlainText());
-	if (src.empty()) { //当手动输入并且没有后缀时，会用这种方式作为替代
-		src = bkz::cvFun::toMat(this->img);
-	}
-
 	if (ui->useImgDeal->isChecked()) {
 		switch (ui->imgDealChoice->currentIndex()) {
 			case 0: {
@@ -217,10 +221,11 @@ void Widget::setFunc() {
 		ui->imgNowW->setText("");
 		ui->imgNowW->setReadOnly(true);
 		ui->imgNowH->setReadOnly(true);
+        changeEnableWH = 0;
 		res.release();
 
 		QString filePath = ui->imgRoad->toPlainText();
-		changeEnableWH = 0;
+
 		if (!filePath.isEmpty()) {
 			img = QImage(filePath);
 			if (!img.isNull()) {
@@ -234,6 +239,17 @@ void Widget::setFunc() {
 
 				ui->imgRawW->setText(QString::number(pixIn.width()));
 				ui->imgNowW->setText(QString::number(pixIn.width()));
+
+                bkz::cvFun::imreadQ(src, ui->imgRoad->toPlainText());
+                /*
+                 * 因为处理最好由opencv独立完成，不希望在qt和opencv中转换带来不期望的影响
+                 * 此时如果src.empty为空，说明能被读入成Qt图像格式，而opencv却读入失败
+                 * 有可能读入了ico格式，或者是手动输入并且没有后缀时，会产生这种情况
+                 * 这里用qt图像转为mat作为补救
+                 * */
+                if (src.empty()) {
+                    src = bkz::cvFun::toMat(this->img);
+                }
 
 				this->inPutImg();
 				this->outPutImg();
@@ -394,17 +410,13 @@ bool Widget::eventFilter(QObject *obj, QEvent *event) {
 		}
 	}
 
-	//使用短暂延迟，让他脱离0.2秒后再出现,以防显示过快
-	if (event->type() == QEvent::FocusOut) {
-		this->isFocusOut = true;
-		QTimer::singleShot(200, [this]() {
-			if (this->isFocusOut) this->setWindowTitle(focusOut);
-		});
-	}
-	if (event->type() == QEvent::FocusIn) { //把focusout覆盖掉
-		this->isFocusOut = false;
-		this->setWindowTitle(focusIn);
-	}
+    if (QEvent::ActivationChange == event->type()) {
+        if (QApplication::activeWindow() != this) {
+            this->setWindowTitle(focusOut);
+        } else {
+            this->setWindowTitle(focusIn);
+        }
+    }
 
 	return QWidget::eventFilter(obj, event); //让父类处理
 }

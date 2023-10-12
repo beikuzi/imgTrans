@@ -2,9 +2,15 @@
 
 namespace bkz {
 
-Mat cvFun::imread(const QString &road) {
-	string Road = road.toStdString();
-	return cv::imread(Road);
+void cvFun::imreadQ(Mat &mat, const QString &filePath) {
+
+    //	string  = road.toStdString();
+    QString fileExtension = filePath.right(4);
+    if (fileExtension == ".ico") {
+        mat.release();
+    } else {
+        mat = cv::imread(filePath.toStdString());
+    }
 }
 
 void cvFun::imwriteQ(const Mat &mat, QWidget *parent) {
@@ -42,7 +48,7 @@ void cvFun::changeChannel(const Mat &src, Mat &res, const int &id) {
 }
 
 Mat cvFun::toMat(const QImage &img) {
-	//	qDebug() << img.format();
+    //    qDebug() << img.format();
 	switch (img.format()) {
 		case QImage::Format_Grayscale8: {
 			return cv::Mat(img.height(), img.width(), CV_8UC1);
@@ -51,6 +57,7 @@ Mat cvFun::toMat(const QImage &img) {
 			QImage temp = img.rgbSwapped(); //Qt颜色通道RGB，Mat颜色通道BGR
 			return cv::Mat(temp.height(), temp.width(), CV_8UC3);
 		}
+        case QImage::Format_ARGB32_Premultiplied:
 		case QImage::Format_RGBA8888:
 		case QImage::Format_RGB32: { //RGBA,要变成BGRA
 			Mat cvImage(img.height(), img.width(), CV_8UC4, (void *)img.bits(), img.bytesPerLine()), res;

@@ -22,7 +22,7 @@ using namespace cv;
 namespace bkz {
 class cvFun {
   public:
-	static Mat imread(const QString &road);
+    static void imreadQ(Mat &mat, const QString &filePath);
 	static void imwriteQ(const Mat &mat, QWidget *parent); //使用qt的功能用窗口保存得到路径，然后再用cv的方式保存mat
 	static QPixmap toPixmap(const Mat &mat);
 	static QPixmap toPixmap(const QImage &img);

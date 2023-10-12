@@ -71,7 +71,7 @@ class Widget : public QWidget {
 
 	QImage img;
 	QPixmap pixIn, pixOut, pixEmpty; //在面板上的缩略图输出
-	Mat res;						 //实际的图片
+    Mat src, res;					 //实际的图片
 	void inPutImg();
 	void outPutImg();
 
